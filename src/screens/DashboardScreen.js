@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, ScrollView, FlatList, Image, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect  } from 'react';
+import { View, Text, StyleSheet, Dimensions, ScrollView, FlatList, Image, TouchableOpacity,Button } from 'react-native';
 import { LineChart, PieChart } from 'react-native-chart-kit';
 
 const screenWidth = Dimensions.get('window').width;
@@ -7,7 +7,8 @@ const screenWidth = Dimensions.get('window').width;
 const DashboardScreen = () => {
   const [selectedGenre, setSelectedGenre] = useState('All');
   const genreList = ['All', 'Action', 'Comedy', 'Drama'];
-
+  const [selectedTimeFrame, setSelectedTimeFrame] = useState('last7days');
+  const [filteredData, setFilteredData] = useState([]);
   const lineData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
     datasets: [
@@ -115,10 +116,83 @@ const DashboardScreen = () => {
       </View>
     </TouchableOpacity>
   );
+  const data = [
+    // Your mock data structure for movies, genres, etc.
+  ];
+
+  useEffect(() => {
+    filterDataByTimeFrame();
+  }, [selectedTimeFrame]);
+
+  const filterDataByTimeFrame = () => {
+    const now = new Date();
+    let filtered = [];
+
+    switch (selectedTimeFrame) {
+      case 'last7days':
+        filtered = data.filter(item => {
+          const itemDate = new Date(item.date);
+          return itemDate >= new Date(now.setDate(now.getDate() - 7));
+        });
+        break;
+      case 'lastMonth':
+        filtered = data.filter(item => {
+          const itemDate = new Date(item.date);
+          return itemDate.getMonth() === now.getMonth() - 1;
+        });
+        break;
+      case 'yearToDate':
+        filtered = data.filter(item => {
+          const itemDate = new Date(item.date);
+          return itemDate.getFullYear() === now.getFullYear();
+        });
+        break;
+      default:
+        filtered = data;
+        break;
+    }
+
+    setFilteredData(filtered);
+  };
 
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.header}>Movie Buff Dashboard</Text>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={[styles.button, selectedTimeFrame === 'last7days' && styles.buttonActive]}
+          onPress={() => setSelectedTimeFrame('last7days')}
+        >
+          <Text style={styles.buttonText}>Last 7 Days</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, selectedTimeFrame === 'lastMonth' && styles.buttonActive]}
+          onPress={() => setSelectedTimeFrame('lastMonth')}
+        >
+          <Text style={styles.buttonText}>Last Month</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, selectedTimeFrame === 'yearToDate' && styles.buttonActive]}
+          onPress={() => setSelectedTimeFrame('yearToDate')}
+        >
+          <Text style={styles.buttonText}>Year to Date</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.dataContainer}>
+        {filteredData.length > 0 ? (
+          filteredData.map(item => (
+            <View key={item.id} style={styles.dataItem}>
+              <Text style={styles.dataTitle}>{item.title}</Text>
+              <Text style={styles.dataDate}>{item.date}</Text>
+              <Text style={styles.dataGenre}>{item.genre}</Text>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.noDataText}>No data available for the selected time frame.</Text>
+        )}
+      </View>
+    
       <View style={styles.genreSelector}>
         {genreList.map(renderGenreButton)}
       </View>
@@ -364,6 +438,59 @@ const styles = StyleSheet.create({
   recommendationItem: {
     marginRight: 15,
     alignItems: 'center',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 20,
+  },
+  button: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    backgroundColor: '#ced4da',
+  },
+  buttonActive: {
+    backgroundColor: 'orange',
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  dataContainer: {
+    marginTop: 10,
+  },
+  dataItem: {
+    padding: 15,
+    marginBottom: 15,
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  dataTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#343a40',
+  },
+  dataDate: {
+    fontSize: 14,
+    color: '#868e96',
+    marginTop: 5,
+  },
+  dataGenre: {
+    fontSize: 16,
+    color: '#adb5bd',
+    marginTop: 5,
+  },
+  noDataText: {
+    fontSize: 16,
+    color: 'white',
+    textAlign: 'center',
+   bottom:20
   },
 });
 
